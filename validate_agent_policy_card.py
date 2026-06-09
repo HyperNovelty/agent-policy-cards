@@ -9,10 +9,12 @@ grant runtime authority.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 
@@ -59,6 +61,20 @@ REQUIRED_CATEGORIES = [
 ]
 
 PLACEHOLDER_MARKERS = ["<short stable name>", "<what useful outcome", "<exact local", "<approved source", "<exact destination", "<search/read", "<e.g."]
+
+UNSAFE_AUTHORITY_PATTERNS = [
+    r"grant itself runtime permission",
+    r"self-approval",
+    r"self approval",
+    r"review is optional",
+]
+
+SECRET_LIKE_PATTERNS = [
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
+    r"\bAKIA[0-9A-Z]{16}\b",
+    r"\bghp_[A-Za-z0-9]{20,}\b",
+    r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b",
+]
 
 
 def normalize(text: str) -> str:
@@ -130,6 +146,14 @@ def validate_text(text: str, *, allow_template_placeholders: bool = False) -> li
         if is_broad_root(mention):
             failures.append(f"path mention is too broad/unsafe: {mention}")
 
+    for pattern in UNSAFE_AUTHORITY_PATTERNS:
+        if re.search(pattern, text, flags=re.IGNORECASE):
+            failures.append(f"unsafe authority expansion language detected: {pattern}")
+
+    for pattern in SECRET_LIKE_PATTERNS:
+        if re.search(pattern, text):
+            failures.append(f"secret-like material detected: {pattern}")
+
     return failures
 
 
@@ -137,6 +161,58 @@ def validate_file(path: Path, *, allow_template_placeholders: bool = False) -> t
     text = path.read_text(encoding="utf-8")
     failures = validate_text(text, allow_template_placeholders=allow_template_placeholders)
     return not failures, failures
+
+
+def build_report(paths: list[str], *, allow_template_placeholders: bool = False) -> dict[str, Any]:
+    results: list[dict[str, Any]] = []
+    summary = {"passed": 0, "failed": 0, "missing": 0, "total": 0}
+
+    for raw in paths:
+        path = Path(raw)
+        if not path.is_absolute():
+            path = PROJECT_ROOT / path
+        rel = str(path.relative_to(PROJECT_ROOT)) if str(path).startswith(str(PROJECT_ROOT)) else str(path)
+        entry: dict[str, Any] = {
+            "input_path": raw,
+            "path": rel,
+            "exists": path.exists(),
+            "ok": False,
+            "failures": [],
+        }
+        summary["total"] += 1
+        if not path.exists():
+            entry["failures"] = ["file not found"]
+            summary["missing"] += 1
+            summary["failed"] += 1
+            results.append(entry)
+            continue
+
+        ok, failures = validate_file(path, allow_template_placeholders=allow_template_placeholders)
+        entry["ok"] = ok
+        entry["failures"] = failures
+        if ok:
+            summary["passed"] += 1
+        else:
+            summary["failed"] += 1
+        results.append(entry)
+
+    return {
+        "report_version": 1,
+        "project_root": str(PROJECT_ROOT),
+        "allow_template_placeholders": allow_template_placeholders,
+        "summary": summary,
+        "results": results,
+    }
+
+
+def print_text_report(report: dict[str, Any]) -> None:
+    for item in report["results"]:
+        if item["ok"]:
+            print(f"PASS {item['path']}")
+        else:
+            print(f"FAIL {item['path']}")
+            for failure in item["failures"]:
+                print(f"  - {failure}")
 
 
 def run_self_test() -> int:
@@ -201,6 +277,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("paths", nargs="*", help="Markdown card paths to validate")
     parser.add_argument("--self-test", action="store_true", help="run built-in validator self-test")
     parser.add_argument("--allow-template-placeholders", action="store_true", help="allow template placeholder markers")
+    parser.add_argument("--json", action="store_true", help="emit a deterministic JSON validation report")
+    parser.add_argument("--json-out", help="write the JSON validation report to a file")
     args = parser.parse_args(argv)
 
     if args.self_test:
@@ -208,25 +286,19 @@ def main(argv: list[str] | None = None) -> int:
     if not args.paths:
         parser.error("provide at least one path or --self-test")
 
-    any_failed = False
-    for raw in args.paths:
-        path = Path(raw)
-        if not path.is_absolute():
-            path = PROJECT_ROOT / path
-        if not path.exists():
-            print(f"FAIL {raw}: file not found")
-            any_failed = True
-            continue
-        ok, failures = validate_file(path, allow_template_placeholders=args.allow_template_placeholders)
-        rel = path if not str(path).startswith(str(PROJECT_ROOT)) else path.relative_to(PROJECT_ROOT)
-        if ok:
-            print(f"PASS {rel}")
-        else:
-            print(f"FAIL {rel}")
-            for failure in failures:
-                print(f"  - {failure}")
-            any_failed = True
-    return 1 if any_failed else 0
+    report = build_report(args.paths, allow_template_placeholders=args.allow_template_placeholders)
+    if args.json or args.json_out:
+        payload = json.dumps(report, indent=2, sort_keys=True)
+        if args.json_out:
+            out_path = Path(args.json_out)
+            if not out_path.is_absolute():
+                out_path = PROJECT_ROOT / out_path
+            out_path.write_text(payload + "\n", encoding="utf-8")
+        if args.json:
+            print(payload)
+    else:
+        print_text_report(report)
+    return 1 if report["summary"]["failed"] else 0
 
 
 if __name__ == "__main__":

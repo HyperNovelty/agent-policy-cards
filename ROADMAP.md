@@ -19,4 +19,4 @@ This repository is intended to be useful to maintainers building bounded AI-agen
 - Add a negative fixture for accidental secret inclusion in policy-card examples.
 - Add a sample policy card for a read-only code-review lane.
 - Improve README examples with before/after unsafe vs safe policy snippets.
-- Add a JSON summary export for CI dashboards.
+- Add registry-level JSON aggregation for multi-command CI dashboards on top of the per-validator JSON export.
