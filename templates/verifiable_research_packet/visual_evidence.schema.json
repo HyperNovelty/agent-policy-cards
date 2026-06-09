@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Verifiable Research Packet Visual Evidence Memory",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "visual_id",
+      "source_id",
+      "file_path",
+      "captured_date",
+      "what_it_shows",
+      "used_for_claim_ids",
+      "limitations"
+    ],
+    "properties": {
+      "visual_id": {
+        "type": "string",
+        "pattern": "^vis_[0-9]{3,}$"
+      },
+      "source_id": {
+        "type": "string"
+      },
+      "file_path": {
+        "type": "string"
+      },
+      "captured_date": {
+        "type": "string"
+      },
+      "what_it_shows": {
+        "type": "string"
+      },
+      "used_for_claim_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "limitations": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Verifiable Research Packet Source Ledger",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "source_id",
+      "url",
+      "title",
+      "source_type",
+      "source_state",
+      "local_evidence_path",
+      "public_quote_allowed",
+      "notes"
+    ],
+    "properties": {
+      "source_id": {
+        "type": "string",
+        "pattern": "^src_[0-9]{3,}$"
+      },
+      "url": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      },
+      "author_or_org": {
+        "type": "string"
+      },
+      "published_or_accessed_date": {
+        "type": "string"
+      },
+      "source_type": {
+        "type": "string",
+        "enum": [
+          "paper",
+          "official_docs",
+          "article",
+          "company_blog",
+          "transcript",
+          "social",
+          "internal",
+          "unknown"
+        ]
+      },
+      "source_state": {
+        "type": "string",
+        "enum": [
+          "full_text_captured",
+          "full_text_captured_lightly",
+          "metadata_only",
+          "blocked",
+          "partial",
+          "private_internal",
+          "unverified"
+        ]
+      },
+      "local_evidence_path": {
+        "type": "string"
+      },
+      "public_quote_allowed": {
+        "type": "boolean"
+      },
+      "notes": {
+        "type": "string"
+      }
+    }
+  }
+}

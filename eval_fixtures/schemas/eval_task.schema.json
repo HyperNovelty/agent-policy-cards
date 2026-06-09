@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.hypernovelty/agent_os/eval_task.schema.json",
+  "title": "Agent OS Local Eval Task Fixture",
+  "description": "Local eval fixture for checking agent workflows without live accounts or public side effects.",
+  "type": "object",
+  "required": ["generated_at", "safety_mode", "tasks"],
+  "additionalProperties": false,
+  "properties": {
+    "generated_at": {"type": "string"},
+    "safety_mode": {"const": "local_eval_fixture_only"},
+    "tasks": {"type": "array", "items": {"$ref": "#/$defs/eval_task"}}
+  },
+  "$defs": {
+    "eval_task": {
+      "type": "object",
+      "required": ["task_id", "title", "lane", "user_goal", "inputs", "allowed_actions", "blocked_actions", "expected_artifacts", "pass_criteria", "failure_modes", "review_gate"],
+      "additionalProperties": false,
+      "properties": {
+        "task_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_\\-]{2,140}$"},
+        "title": {"type": "string"},
+        "lane": {"enum": ["source_intake", "citation_sufficiency", "review_packet", "education_adaptation", "agent_handoff", "operator_checklist"]},
+        "user_goal": {"type": "string"},
+        "inputs": {"type": "array", "items": {"type": "string"}},
+        "allowed_actions": {"type": "array", "items": {"type": "string"}},
+        "blocked_actions": {"type": "array", "items": {"type": "string"}},
+        "expected_artifacts": {"type": "array", "items": {"type": "string"}},
+        "pass_criteria": {"type": "array", "items": {"type": "string"}},
+        "failure_modes": {"type": "array", "items": {"type": "string"}},
+        "review_gate": {"type": "string"},
+        "source_cards": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

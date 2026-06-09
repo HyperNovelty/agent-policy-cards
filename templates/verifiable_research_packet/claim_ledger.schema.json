@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Verifiable Research Packet Claim Ledger",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "claim_id",
+      "claim_text",
+      "claim_type",
+      "source_ids",
+      "evidence_quote_or_pointer",
+      "verification_status",
+      "public_use_status",
+      "risk_tags",
+      "reviewer_note"
+    ],
+    "properties": {
+      "claim_id": {
+        "type": "string",
+        "pattern": "^clm_[0-9]{3,}$"
+      },
+      "claim_text": {
+        "type": "string"
+      },
+      "claim_type": {
+        "type": "string",
+        "enum": [
+          "factual",
+          "interpretive",
+          "strategic",
+          "product_implication",
+          "risk_warning"
+        ]
+      },
+      "source_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "evidence_quote_or_pointer": {
+        "type": "string"
+      },
+      "verification_status": {
+        "type": "string",
+        "enum": [
+          "verified_strongly",
+          "verified_lightly",
+          "not_verified",
+          "contradicted",
+          "source_limited"
+        ]
+      },
+      "public_use_status": {
+        "type": "string",
+        "enum": [
+          "usable",
+          "usable_with_caveat",
+          "internal_only",
+          "blocked"
+        ]
+      },
+      "risk_tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "reviewer_note": {
+        "type": "string"
+      }
+    }
+  }
+}
