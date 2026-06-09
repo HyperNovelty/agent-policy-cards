@@ -17,9 +17,9 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-PROJECT_ROOT = Path("/home/aware1/.hermes/content-empire").resolve()
-DEFAULT_REGISTRY = PROJECT_ROOT / "products/agent_os_authority_layer/policy_card_registry.json"
-VALIDATOR = PROJECT_ROOT / "products/agent_os_authority_layer/validate_agent_policy_card.py"
+PROJECT_ROOT = Path(__file__).resolve().parent
+DEFAULT_REGISTRY = PROJECT_ROOT / "policy_card_registry.json"
+VALIDATOR = PROJECT_ROOT / "validate_agent_policy_card.py"
 
 
 def parse_date(raw: str | None) -> date | None:

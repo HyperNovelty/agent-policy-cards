@@ -15,8 +15,8 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-PROJECT_ROOT = Path("/home/aware1/.hermes/content-empire").resolve()
-CHECKER = PROJECT_ROOT / "products/agent_os_authority_layer/check_policy_card_registry.py"
+PROJECT_ROOT = Path(__file__).resolve().parent
+CHECKER = PROJECT_ROOT / "check_policy_card_registry.py"
 OUT_JSON = PROJECT_ROOT / "dashboard/policy_card_registry_summary.json"
 OUT_MD = PROJECT_ROOT / "dashboard/POLICY_CARD_REGISTRY_SUMMARY.md"
 
@@ -62,8 +62,8 @@ def compact_summary(report: dict[str, Any]) -> dict[str, Any]:
         },
         "attention_lanes": attention,
         "boundary": "Visibility only. No runtime enforcement, job blocking, cron/config changes, MCP/toolkit wiring, account/public/paid/destructive actions, or new worker authority.",
-        "source_report": "reports/tool_vetting/AGENT_POLICY_CARD_REGISTRY_CHECK_2026-06-07.json",
-        "registry": "products/agent_os_authority_layer/policy_card_registry.json",
+        "source_report": "dashboard/policy_card_registry_summary.json",
+        "registry": "policy_card_registry.json",
     }
 
 
@@ -97,9 +97,9 @@ def markdown(summary: dict[str, Any]) -> str:
     lines += [
         "",
         "## Source files",
-        "- `products/agent_os_authority_layer/policy_card_registry.json`",
-        "- `products/agent_os_authority_layer/check_policy_card_registry.py`",
-        "- `reports/tool_vetting/AGENT_POLICY_CARD_REGISTRY_CHECK_2026-06-07.json`",
+        "- `policy_card_registry.json`",
+        "- `check_policy_card_registry.py`",
+        "- `dashboard/policy_card_registry_summary.json`",
     ]
     return "\n".join(lines) + "\n"
 

@@ -17,4 +17,4 @@ jobs:
           python3 validate_agent_policy_card.py --self-test
           python3 check_policy_card_registry.py
           python3 eval_fixtures/tests/validate_eval_tasks.py
-
+          python3 -m unittest discover -s tests

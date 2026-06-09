@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-PROJECT_ROOT = Path("/home/aware1/.hermes/content-empire").resolve()
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 REQUIRED_HEADINGS = [
     "job identity",
