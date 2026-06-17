@@ -14,6 +14,8 @@ import validate_agent_policy_card as validator
 
 UNSAFE_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "unsafe_authority_policy_card.md"
 SECRET_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "secret_like_policy_card.md"
+SECRET_SEARCH_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "secret_search_policy_card.md"
+UNGATED_PUBLIC_ACCOUNT_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "ungated_public_account_policy_card.md"
 
 
 class ValidateAgentPolicyCardTests(unittest.TestCase):
@@ -34,6 +36,24 @@ class ValidateAgentPolicyCardTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("secret-like material detected: -----BEGIN [A-Z ]*PRIVATE KEY-----", failures)
         self.assertIn(r"secret-like material detected: \bghp_[A-Za-z0-9]{20,}\b", failures)
+
+    def test_secret_search_fixture_fails_with_expected_findings(self) -> None:
+        ok, failures = validator.validate_file(SECRET_SEARCH_FIXTURE)
+
+        self.assertFalse(ok)
+        self.assertIn(
+            r"unsafe secret-search authority detected: \b(search|scan|grep|find|look for)\b.{0,80}\b(api keys?|secrets?|tokens?|credentials?)\b",
+            failures,
+        )
+
+    def test_ungated_public_account_fixture_fails_with_expected_findings(self) -> None:
+        ok, failures = validator.validate_file(UNGATED_PUBLIC_ACCOUNT_FIXTURE)
+
+        self.assertFalse(ok)
+        self.assertIn(
+            r"ungated public/account authority detected: \b(publish|post|upload|share|change account settings|edit account settings)\b.{0,120}\b(without|no)\b.{0,40}\b(explicit )?(human )?(approval|review)\b",
+            failures,
+        )
 
     def test_cli_validates_repo_local_example_path(self) -> None:
         cmd = [

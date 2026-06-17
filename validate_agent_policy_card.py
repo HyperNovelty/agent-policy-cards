@@ -76,6 +76,14 @@ SECRET_LIKE_PATTERNS = [
     r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b",
 ]
 
+UNSAFE_SECRET_SEARCH_PATTERNS = [
+    r"\b(search|scan|grep|find|look for)\b.{0,80}\b(api keys?|secrets?|tokens?|credentials?)\b",
+]
+
+UNSAFE_UNGATED_PUBLIC_ACCOUNT_PATTERNS = [
+    r"\b(publish|post|upload|share|change account settings|edit account settings)\b.{0,120}\b(without|no)\b.{0,40}\b(explicit )?(human )?(approval|review)\b",
+]
+
 
 def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text.lower())
@@ -153,6 +161,14 @@ def validate_text(text: str, *, allow_template_placeholders: bool = False) -> li
     for pattern in SECRET_LIKE_PATTERNS:
         if re.search(pattern, text):
             failures.append(f"secret-like material detected: {pattern}")
+
+    for pattern in UNSAFE_SECRET_SEARCH_PATTERNS:
+        if re.search(pattern, text, flags=re.IGNORECASE):
+            failures.append(f"unsafe secret-search authority detected: {pattern}")
+
+    for pattern in UNSAFE_UNGATED_PUBLIC_ACCOUNT_PATTERNS:
+        if re.search(pattern, text, flags=re.IGNORECASE):
+            failures.append(f"ungated public/account authority detected: {pattern}")
 
     return failures
 

@@ -14,6 +14,10 @@ credential access, account actions, or adoption.
 
 Use this repository to prototype narrow AI-agent lanes with explicit limits, local validation, and auditable examples. The current focus is safety-bounded maintainer workflows, synthetic/public-safe fixtures, and reusable templates that stay honest about maturity: useful for review and iteration now, not presented as a complete enforcement system.
 
+The validator also includes negative fixtures for blocked cases such as cards
+that ask agents to search for secrets/API keys or grant public posting and
+account-setting authority without explicit approval gates.
+
 ## Examples
 
 The examples directory shows several bounded workflow patterns you can inspect alongside the validators and registry:
