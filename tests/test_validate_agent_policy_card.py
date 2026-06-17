@@ -6,10 +6,12 @@ import sys
 import unittest
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
+
 import validate_agent_policy_card as validator
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
 UNSAFE_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "unsafe_authority_policy_card.md"
 SECRET_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "secret_like_policy_card.md"
 

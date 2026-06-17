@@ -2,6 +2,14 @@
 
 This is an early public candidate repo for drafting bounded agent-policy cards, validating them locally, and packaging report-only research artifacts. It is intentionally documentation-first: the cards and validators describe allowed scope and safety boundaries, but they do not grant runtime authority or enable external side effects by themselves.
 
+## Why this exists
+
+Agent workflows are easier to review when their purpose, allowed scope, exclusions,
+evidence, stop conditions, and human review gates are written down before anyone
+treats them as reusable. This repository keeps those cards local and static so
+they can be inspected, tested, and improved without implying deployment,
+credential access, account actions, or adoption.
+
 ## What this is
 
 Use this repository to prototype narrow AI-agent lanes with explicit limits, local validation, and auditable examples. The current focus is safety-bounded maintainer workflows, synthetic/public-safe fixtures, and reusable templates that stay honest about maturity: useful for review and iteration now, not presented as a complete enforcement system.
@@ -14,6 +22,16 @@ The examples directory shows several bounded workflow patterns you can inspect a
 - `DAILY_AI_TOOL_SCOUT`: recurring scouting workflow framed as research/report output, not autonomous action.
 - `IPUBLISHOS_DASHBOARD_EDITOR_PATCH`: bounded dashboard editing lane with explicit patch-review expectations.
 - `SOURCE_TO_SYSTEM_PROMOTION_LANE`: promotion workflow that keeps source review and approval separate from execution authority.
+
+See [docs/EXAMPLE_GALLERY.md](docs/EXAMPLE_GALLERY.md) for what each example
+demonstrates and what it does not authorize.
+
+## Repository policies
+
+- [SECURITY.md](SECURITY.md): no-secrets and no-runtime-authority policy, plus
+  responsible disclosure guidance.
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md): compact participation and safety
+  conduct note.
 
 ## Development
 

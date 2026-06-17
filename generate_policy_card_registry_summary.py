@@ -107,24 +107,31 @@ def markdown(summary: dict[str, Any]) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate compact report-only policy-card registry dashboard summary.")
     parser.add_argument("--today", default=date.today().isoformat(), help="YYYY-MM-DD date for deterministic registry check")
-    parser.add_argument("--json-out", default=str(OUT_JSON))
-    parser.add_argument("--md-out", default=str(OUT_MD))
+    parser.add_argument("--json-out")
+    parser.add_argument("--output", help="compatibility alias for --json-out")
+    parser.add_argument("--md-out")
     args = parser.parse_args(argv)
 
     report = run_checker(args.today)
     summary = compact_summary(report)
-    json_out = Path(args.json_out)
-    md_out = Path(args.md_out)
+    json_target = args.output or args.json_out or str(OUT_JSON)
+    md_target = args.md_out
+    if md_target is None and args.output is None:
+        md_target = str(OUT_MD)
+
+    json_out = Path(json_target)
     if not json_out.is_absolute():
         json_out = PROJECT_ROOT / json_out
-    if not md_out.is_absolute():
-        md_out = PROJECT_ROOT / md_out
     json_out.parent.mkdir(parents=True, exist_ok=True)
-    md_out.parent.mkdir(parents=True, exist_ok=True)
     json_out.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    md_out.write_text(markdown(summary), encoding="utf-8")
     print(json_out)
-    print(md_out)
+    if md_target is not None:
+        md_out = Path(md_target)
+        if not md_out.is_absolute():
+            md_out = PROJECT_ROOT / md_out
+        md_out.parent.mkdir(parents=True, exist_ok=True)
+        md_out.write_text(markdown(summary), encoding="utf-8")
+        print(md_out)
     print(json.dumps(summary["counts"], sort_keys=True))
     return 0
 

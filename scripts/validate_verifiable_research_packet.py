@@ -7,6 +7,7 @@ Usage:
 import json
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 ALLOWED_APPROVAL = {
     "draft_packet", "ready_for_human_review", "needs_more_sources",
@@ -115,7 +116,80 @@ def validate(packet_dir):
     return errors, warnings
 
 
+def run_self_test():
+    with TemporaryDirectory() as tmp:
+        packet = Path(tmp) / "packet"
+        packet.mkdir()
+        (packet / "PACKET.md").write_text(
+            "Status: ready_for_human_review\n\nPublic side effects: none\n",
+            encoding="utf-8",
+        )
+        (packet / "source_ledger.json").write_text(
+            json.dumps(
+                [
+                    {
+                        "source_id": "src_001",
+                        "url": "https://example.com/source",
+                        "title": "Synthetic public-safe source",
+                        "source_type": "public_web",
+                        "source_state": "metadata_only",
+                        "local_evidence_path": "evidence/source.txt",
+                        "public_quote_allowed": False,
+                        "notes": "Synthetic self-test fixture.",
+                    }
+                ],
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (packet / "claim_ledger.json").write_text(
+            json.dumps(
+                [
+                    {
+                        "claim_id": "claim_001",
+                        "claim_text": "Synthetic claim for validator self-test.",
+                        "claim_type": "factual",
+                        "source_ids": ["src_001"],
+                        "evidence_quote_or_pointer": "source_ledger.json#src_001",
+                        "verification_status": "verified_lightly",
+                        "public_use_status": "usable_with_caveat",
+                        "risk_tags": ["synthetic"],
+                        "reviewer_note": "No public side effects.",
+                    }
+                ],
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (packet / "verifier_checklist.md").write_text("- [x] Synthetic source only.\n", encoding="utf-8")
+        (packet / "dashboard_review_card.md").write_text("# Dashboard Review Card\n", encoding="utf-8")
+
+        errors, _warnings = validate(packet)
+        if errors:
+            print("SELF_TEST_FAIL: valid fixture failed")
+            for error in errors:
+                print(f" - {error}")
+            return 1
+
+        broken = Path(tmp) / "broken"
+        broken.mkdir()
+        (broken / "PACKET.md").write_text("Status: ready_for_human_review\n", encoding="utf-8")
+        broken_errors, _broken_warnings = validate(broken)
+        if not broken_errors:
+            print("SELF_TEST_FAIL: broken fixture passed unexpectedly")
+            return 1
+
+    print("SELF_TEST_PASS")
+    return 0
+
+
 def main(argv):
+    if len(argv) == 2 and argv[1] == "--self-test":
+        return run_self_test()
     if len(argv) != 2:
         print(__doc__)
         return 2
