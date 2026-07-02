@@ -101,6 +101,20 @@ def build_gallery() -> str:
 
     lines.extend(
         [
+            "## Intake Artifacts",
+            "",
+            "The repository also includes an AI Use Intake Card lane for capturing a",
+            "public-safe workflow summary before deciding whether policy cards, authority",
+            "envelopes, stronger evidence, or human review are needed.",
+            "",
+            "### `ai_use_intake_card`",
+            "",
+            "- **Schema:** `schemas/ai_use_intake_card.schema.json`",
+            "- **Fixture:** `examples/ai_use_intake_card.customer_support_fixture.json`",
+            "- **Rendered demo:** `examples/rendered/ai_use_intake_card_demo.md`",
+            "- **Contract:** `docs/ai_use_intake_card_contract.md`",
+            "- **Does not authorize:** Compliance approval, deployment approval, legal advice, certification, public/account actions, or permission to operate.",
+            "",
             "## Regeneration",
             "",
             "The gallery can be regenerated deterministically from the registry with:",

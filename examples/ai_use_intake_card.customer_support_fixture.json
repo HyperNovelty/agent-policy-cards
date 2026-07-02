@@ -1,0 +1,37 @@
+{
+  "card_type": "ai_use_intake",
+  "status": "sample_local_only",
+  "system_name": "Customer Support Draft Reply Assistant",
+  "owner": "Operations Lead",
+  "business_purpose": "Draft customer-support replies for human review before any message is sent.",
+  "build_or_buy": "buy_or_configure_existing_model",
+  "vendor_or_model": "TBD public-safe model or vendor",
+  "data_touched": [
+    "customer messages",
+    "order context",
+    "support history"
+  ],
+  "sensitive_data_possible": true,
+  "decision_or_output": "Drafts suggested reply text for a reviewer; does not send messages, post publicly, change account settings, approve refunds, or decide eligibility.",
+  "affected_people": [
+    "customers",
+    "support staff"
+  ],
+  "consequential_decision_exposure": "possible_if_automated",
+  "human_review_required": true,
+  "non_ai_alternative": "Human-written replies using existing support macros.",
+  "initial_route": "assess",
+  "missing_evidence": [
+    "vendor data-use terms",
+    "incident pause owner",
+    "operational fallback proof",
+    "real reviewer runbook evidence"
+  ],
+  "synthetic_evidence_attached": [
+    "human-review workflow proof",
+    "local smoke audit log",
+    "draft fallback process"
+  ],
+  "next_gate": "authority_envelope",
+  "not_approval_statement": "This intake card is a local review aid only and is not compliance approval, deployment approval, legal advice, or permission to operate the system."
+}

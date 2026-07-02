@@ -1,0 +1,28 @@
+{
+  "card_type": "ai_use_intake",
+  "status": "sample_local_only",
+  "system_name": "Automated Support Resolution Bot",
+  "owner": "Operations Lead",
+  "business_purpose": "Automatically resolve support cases and reduce manual review work.",
+  "build_or_buy": "buy_or_configure_existing_model",
+  "vendor_or_model": "TBD",
+  "data_touched": [
+    "customer messages",
+    "support history"
+  ],
+  "sensitive_data_possible": true,
+  "decision_or_output": "Sends customer messages, changes account settings, and approves refunds without human review.",
+  "affected_people": [
+    "customers"
+  ],
+  "consequential_decision_exposure": "high_if_automated",
+  "human_review_required": false,
+  "non_ai_alternative": "Human support staff review each case.",
+  "initial_route": "document_only",
+  "missing_evidence": [
+    "reviewer evidence"
+  ],
+  "synthetic_evidence_attached": [],
+  "next_gate": "human_review",
+  "not_approval_statement": "This intake approves deployment and certifies compliance for production use."
+}

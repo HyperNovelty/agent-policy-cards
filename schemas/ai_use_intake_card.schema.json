@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.example/agent-policy-cards/ai_use_intake_card.schema.json",
+  "title": "AI Use Intake Card",
+  "description": "Public-safe local intake record for describing an AI-enabled workflow before deciding whether stronger review artifacts are needed. This schema is advisory and does not grant approval to deploy.",
+  "type": "object",
+  "required": [
+    "card_type",
+    "status",
+    "system_name",
+    "owner",
+    "business_purpose",
+    "build_or_buy",
+    "vendor_or_model",
+    "data_touched",
+    "sensitive_data_possible",
+    "decision_or_output",
+    "affected_people",
+    "consequential_decision_exposure",
+    "human_review_required",
+    "non_ai_alternative",
+    "initial_route",
+    "missing_evidence",
+    "synthetic_evidence_attached",
+    "next_gate",
+    "not_approval_statement"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "card_type": {
+      "const": "ai_use_intake"
+    },
+    "status": {
+      "enum": ["sample_local_only", "draft_local_only"]
+    },
+    "system_name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 140
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 100
+    },
+    "business_purpose": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 500
+    },
+    "build_or_buy": {
+      "enum": ["build_custom", "buy_or_configure_existing_model", "undecided"]
+    },
+    "vendor_or_model": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120
+    },
+    "data_touched": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 120
+      }
+    },
+    "sensitive_data_possible": {
+      "type": "boolean"
+    },
+    "decision_or_output": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 700
+    },
+    "affected_people": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 120
+      }
+    },
+    "consequential_decision_exposure": {
+      "enum": ["none", "limited_with_human_review", "possible_if_automated", "high_if_automated"]
+    },
+    "human_review_required": {
+      "type": "boolean"
+    },
+    "non_ai_alternative": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 400
+    },
+    "initial_route": {
+      "enum": ["document_only", "assess", "requires_policy_card", "requires_authority_envelope", "do_not_proceed"]
+    },
+    "missing_evidence": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 160
+      }
+    },
+    "synthetic_evidence_attached": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 160
+      }
+    },
+    "next_gate": {
+      "enum": ["policy_card", "authority_envelope", "evidence_review", "human_review", "do_not_proceed"]
+    },
+    "not_approval_statement": {
+      "type": "string",
+      "minLength": 30,
+      "maxLength": 300
+    }
+  }
+}

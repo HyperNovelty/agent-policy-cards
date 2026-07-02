@@ -26,9 +26,13 @@ The examples directory shows several bounded workflow patterns you can inspect a
 - `DAILY_AI_TOOL_SCOUT`: recurring scouting workflow framed as research/report output, not autonomous action.
 - `IPUBLISHOS_DASHBOARD_EDITOR_PATCH`: bounded dashboard editing lane with explicit patch-review expectations.
 - `SOURCE_TO_SYSTEM_PROMOTION_LANE`: promotion workflow that keeps source review and approval separate from execution authority.
+- `AI_USE_INTAKE_CARD`: local intake fixture for describing an AI-enabled workflow before deciding whether policy cards, authority envelopes, stronger evidence, or human review are needed.
 
 See [docs/EXAMPLE_GALLERY.md](docs/EXAMPLE_GALLERY.md) for what each example
 demonstrates and what it does not authorize.
+
+The AI Use Intake Card contract is documented in
+[docs/ai_use_intake_card_contract.md](docs/ai_use_intake_card_contract.md).
 
 ## Repository policies
 
@@ -46,6 +50,7 @@ python3 validate_agent_policy_card.py --self-test
 python3 check_policy_card_registry.py
 python3 eval_fixtures/tests/validate_eval_tasks.py
 python3 -m unittest discover -s tests
+python3 tests/validate_ai_use_intake_card.py
 ```
 
 For machine-readable card validation output:
