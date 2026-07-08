@@ -1,31 +1,30 @@
 ---
 name: Bug report
-about: Report a validator, fixture, or documentation defect
-title: "[Bug] "
+about: Report a reproducible problem with a validator, schema, example, or documentation path.
+title: "[bug]: "
 labels: bug
-assignees: ""
+assignees: ''
 ---
 
-## Summary
+## What happened?
 
-Describe the defect in one or two sentences.
+## How to reproduce
 
-## Reproduction
+1.
+2.
+3.
 
-1. Run the exact local command(s):
-2. Note the files involved:
-3. Describe the observed result:
+## Expected behavior
 
-## Expected result
+## Actual behavior
 
-Describe the expected validator or documentation behavior.
+## Local validation output
 
-## Safety impact
+```text
+paste command and output here
+```
 
-Explain whether this affects authority boundaries, local-only guarantees, or review gates.
+## Boundary check
 
-## Environment
-
-- Python version:
-- OS:
-- Commit:
+- [ ] This report contains no secrets, credentials, private data, or customer/student records.
+- [ ] Any examples are synthetic or public-safe.
