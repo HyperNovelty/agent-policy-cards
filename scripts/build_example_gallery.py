@@ -60,6 +60,19 @@ DETAILS = {
             "public publishing, or broad filesystem rewrites."
         ),
     },
+    "read_only_code_review_lane": {
+        "demonstrates": (
+            "A single-repository read-only code review lane with source/docs/"
+            "test/config inspection, git status/diff/log context, evidence-backed "
+            "findings, and explicit stop conditions for ambiguity or mutation."
+        ),
+        "does_not_authorize": (
+            "Edits, patches, formatting writes, dependency changes, commits, "
+            "branches, merges, pushes, PR/review submissions, issue comments, "
+            "secret/key/token discovery, account actions, deploys, publishing, "
+            "paid actions, or security/compliance certification claims."
+        ),
+    },
 }
 
 

@@ -1,7 +1,7 @@
 {
   "registry_version": "0.1.0-report-only",
-  "generated_at": "2026-06-07T17:36:05-06:00",
-  "status": "local advisory registry prototype; all V0 lanes have static cards",
+  "generated_at": "2026-07-31T00:00:00-06:00",
+  "status": "local advisory registry prototype; static cards cover current example lanes",
   "mode": "report_only_no_runtime_enforcement",
   "boundary": "This registry is not a runtime permission grant, not a job router, not a cron gate, not toolkit wiring, and not approval for public/account/paid/destructive actions. It only reports whether known local worker lanes have current static Agent Policy Cards.",
   "default_stale_after_days": 90,
@@ -64,6 +64,29 @@
         "public launch",
         "account actions",
         "unattended production deploy"
+      ]
+    },
+    {
+      "lane_id": "read_only_code_review_lane",
+      "lane_label": "Read-only code review lane",
+      "lane_type": "single_repository_read_only_review",
+      "policy_card_path": "examples/AGENT_POLICY_CARD_READ_ONLY_CODE_REVIEW_LANE_2026-07-31.md",
+      "required_before_next_change": true,
+      "last_reviewed": "2026-07-31",
+      "next_review_due": "2026-10-31",
+      "owner": "Hermes/Jordan review",
+      "expected_scope": "read-only source/docs/test/config inspection inside one explicitly assigned repository or worktree, with git status/diff/log and non-mutating tests only when explicitly allowed",
+      "blocked_expansion_without_new_card": [
+        "file edits or patches",
+        "formatting writes or generated-file updates",
+        "dependency changes",
+        "commits, branches, merges, pushes, tags, or releases",
+        "pull request submissions, review submissions, or issue comments",
+        "secret/key/token discovery",
+        ".env or credential-store reads",
+        "account actions, deploys, publishing, or paid actions",
+        "runtime enforcement or permission grants",
+        "security-audit, compliance, or certification claims"
       ]
     },
     {

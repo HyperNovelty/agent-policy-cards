@@ -84,9 +84,24 @@ UNSAFE_UNGATED_PUBLIC_ACCOUNT_PATTERNS = [
     r"\b(publish|post|upload|share|change account settings|edit account settings)\b.{0,120}\b(without|no)\b.{0,40}\b(explicit )?(human )?(approval|review)\b",
 ]
 
+CODE_REVIEW_CONTEXT_PATTERN = r"(?:code review(?: agent| lane| worker)?|during review)"
+MUTATION_AUTHORITY_PATTERN = r"(?:may\s+(?!not\b)|can\s+(?!not\b)|is\s+(?!not\s+)(?:allowed|permitted|authorized)\s+to\s+)"
+MUTATION_ACTION_PATTERN = r"(?:edit|patch|format|commit|branch|merge|push|submit)\b"
+
+UNSAFE_CODE_REVIEW_MUTATION_PATTERNS = [
+    rf"\b{CODE_REVIEW_CONTEXT_PATTERN}\b.{{0,160}}\b{MUTATION_AUTHORITY_PATTERN}.{{0,80}}\b{MUTATION_ACTION_PATTERN}",
+    rf"\b{MUTATION_AUTHORITY_PATTERN}.{{0,80}}\b{MUTATION_ACTION_PATTERN}.{{0,160}}\b{CODE_REVIEW_CONTEXT_PATTERN}\b",
+]
+
 
 def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text.lower())
+
+
+def normalize_mutation_authority_text(text: str) -> str:
+    lowered = text.lower()
+    without_hyphenation = re.sub(r"(?<=\w)-(?=\w)", " ", lowered)
+    return re.sub(r"\s+", " ", without_hyphenation)
 
 
 def heading_texts(text: str) -> list[str]:
@@ -169,6 +184,11 @@ def validate_text(text: str, *, allow_template_placeholders: bool = False) -> li
     for pattern in UNSAFE_UNGATED_PUBLIC_ACCOUNT_PATTERNS:
         if re.search(pattern, text, flags=re.IGNORECASE):
             failures.append(f"ungated public/account authority detected: {pattern}")
+
+    mutation_norm = normalize_mutation_authority_text(text)
+    for pattern in UNSAFE_CODE_REVIEW_MUTATION_PATTERNS:
+        if re.search(pattern, mutation_norm):
+            failures.append(f"unsafe code-review mutation authority detected: {pattern}")
 
     return failures
 

@@ -30,6 +30,12 @@ public/account/paid/destructive actions.
 - **Demonstrates:** A narrow local dashboard/editor patch lane with scoped local reads and writes, generator runs, JSON/HTML/browser-local verification, and explicit review evidence.
 - **Does not authorize:** Deploys, account sync, Google/Substack/KDP actions, credential access, third-party scripts or package installs without vetting, public publishing, or broad filesystem rewrites.
 
+### `read_only_code_review_lane`
+
+- **Card:** `examples/AGENT_POLICY_CARD_READ_ONLY_CODE_REVIEW_LANE_2026-07-31.md`
+- **Demonstrates:** A single-repository read-only code review lane with source/docs/test/config inspection, git status/diff/log context, evidence-backed findings, and explicit stop conditions for ambiguity or mutation.
+- **Does not authorize:** Edits, patches, formatting writes, dependency changes, commits, branches, merges, pushes, PR/review submissions, issue comments, secret/key/token discovery, account actions, deploys, publishing, paid actions, or security/compliance certification claims.
+
 ## Intake Artifacts
 
 The repository also includes an AI Use Intake Card lane for capturing a
