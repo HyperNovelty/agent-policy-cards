@@ -73,14 +73,32 @@ class ValidateAgentPolicyCardTests(unittest.TestCase):
     def test_code_review_mutating_authority_affirmative_variants_fail(self) -> None:
         cases = [
             "The code-review agent may edit files after inspection.",
+            "The code-review agent may modify files after inspection.",
             "For code review, the agent is permitted to edit files.",
             "During review,\n the agent can patch defects in place.",
+            "During review, the agent is allowed to write fixes.",
+            "The code reviewer may edit files after inspection.",
             "The code review lane is allowed to format files.",
             "The code review worker is authorized to commit fixes.",
             "The agent may branch during review when fixes are obvious.",
             "The agent can submit review changes during review.",
             "During review the agent may merge branches.",
             "During review the agent can push fixes.",
+            "During code review, the agent may apply fixes.",
+            "During code review, the agent may not only inspect files but also edit them.",
+            "The code reviewer may not only inspect but also modify files.",
+            "During code review, the agent may not just inspect; it may also patch defects.",
+            "Editing files is allowed during code review.",
+            "During code review, edits are permitted.",
+            "The code-review agent has permission to edit files.",
+            "The code-review agent may update files.",
+            "The code-review agent may rewrite files.",
+            "The code-review agent may delete files.",
+            "The code-review agent may create files.",
+            "Code reviewers may edit files.",
+            "Code review agents are allowed to edit files.",
+            "The code review agents are authorized to delete files.",
+            "During code review, edits by the review agent are permitted.",
         ]
 
         for text in cases:
@@ -95,8 +113,20 @@ class ValidateAgentPolicyCardTests(unittest.TestCase):
     def test_code_review_mutating_authority_denials_do_not_false_positive(self) -> None:
         cases = [
             "The code-review agent may not edit files.",
+            "The code-review agent may never edit files.",
             "During review the agent cannot patch defects.",
+            "During code review, the agent may inspect files but cannot edit them.",
             "For code review, the agent is not permitted to commit fixes.",
+            "The code review agent may only inspect, not patch files.",
+            "During code review, the agent may write findings for the human reviewer.",
+            "During code review, the agent may write a report but may not write files.",
+            "During code review, the agent may suggest fixes but cannot apply them.",
+            "The code-review agent may inspect files, and the implementation agent may edit them.",
+            "- The review agent may inspect files.\n- A separate implementation agent may edit files.",
+            "During code review, edits by the implementation agent are permitted.",
+            "During code review, edits are permitted for the implementation agent, not the review agent.",
+            "During code review, edits are permitted for the implementation agents.",
+            "During code review, edits by implementation agents are permitted.",
         ]
 
         for text in cases:

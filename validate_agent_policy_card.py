@@ -84,14 +84,42 @@ UNSAFE_UNGATED_PUBLIC_ACCOUNT_PATTERNS = [
     r"\b(publish|post|upload|share|change account settings|edit account settings)\b.{0,120}\b(without|no)\b.{0,40}\b(explicit )?(human )?(approval|review)\b",
 ]
 
-CODE_REVIEW_CONTEXT_PATTERN = r"(?:code review(?: agent| lane| worker)?|during review)"
-MUTATION_AUTHORITY_PATTERN = r"(?:may\s+(?!not\b)|can\s+(?!not\b)|is\s+(?!not\s+)(?:allowed|permitted|authorized)\s+to\s+)"
-MUTATION_ACTION_PATTERN = r"(?:edit|patch|format|commit|branch|merge|push|submit)\b"
-
-UNSAFE_CODE_REVIEW_MUTATION_PATTERNS = [
-    rf"\b{CODE_REVIEW_CONTEXT_PATTERN}\b.{{0,160}}\b{MUTATION_AUTHORITY_PATTERN}.{{0,80}}\b{MUTATION_ACTION_PATTERN}",
-    rf"\b{MUTATION_AUTHORITY_PATTERN}.{{0,80}}\b{MUTATION_ACTION_PATTERN}.{{0,160}}\b{CODE_REVIEW_CONTEXT_PATTERN}\b",
-]
+CODE_REVIEW_CONTEXT_RE = re.compile(r"\b(?:during|for)\s+(?:code\s+)?review\b|\bcode\s+review\b")
+CODE_REVIEW_ACTOR_RE = re.compile(
+    r"\b(?:code\s+review(?:er|ers| agents?| lane| worker)|review\s+agent)\b"
+)
+OTHER_ACTOR_RE = re.compile(r"\b(?:implementation|implementer|patch|editing)\s+agent\b")
+REVIEW_PASSIVE_RECIPIENT_RE = re.compile(
+    r"\b(?:by|for|to)\s+(?:the\s+|a\s+|an\s+)?"
+    r"(?:code\s+review(?:er|ers| agents?)|review\s+agent)\b"
+)
+OTHER_PASSIVE_RECIPIENT_RE = re.compile(
+    r"\b(?:by|for|to)\s+(?:the\s+|a\s+|an\s+|separate\s+)?"
+    r"(?:implementation|implementer|patch|editing)\s+agents?\b"
+)
+NEGATED_REVIEW_RECIPIENT_RE = re.compile(
+    r"\bnot\s+(?:the\s+|a\s+|an\s+)?(?:code\s+review(?:er|ers| agents?)|review\s+agent)\b"
+)
+GENERIC_REVIEW_AGENT_RE = re.compile(r"\b(?:the\s+)?agent\b")
+PRONOUN_ACTOR_RE = re.compile(r"\bit\b")
+MUTATION_AUTHORITY_RE = re.compile(
+    r"\b(?:may|can|(?:is|are|be|being)\s+(?:allowed|permitted|authorized)\s+to|"
+    r"(?:allowed|permitted|authorized)\s+to|ha(?:s|ve)\s+permission\s+to)\b"
+)
+MUTATION_ACTION_CANDIDATE_RE = re.compile(
+    r"\b(edit|edits|editing|patch|patches|patching|format|formats|formatting|"
+    r"commit|commits|committing|branch|branches|branching|merge|merges|merging|"
+    r"push|pushes|pushing|submit|submits|submitting|modify|modifies|modifying|"
+    r"update|updates|updating|rewrite|rewrites|rewriting|delete|deletes|deleting|"
+    r"create|creates|creating|write|writes|writing|apply|applies|applying)\b"
+)
+PASSIVE_MUTATION_GRANT_RE = re.compile(
+    r"\b(?:editing|edits|file\s+edits|code\s+changes|patching|modifying|updating|"
+    r"rewriting|deleting|creating|formatting)\b.{0,40}\b(?:is|are)\s+"
+    r"(?:allowed|permitted|authorized)\b"
+)
+MUTATION_PAIR_MAX_CHARS = 100
+MUTATION_CONTEXT_MAX_CHARS = 180
 
 
 def normalize(text: str) -> str:
@@ -101,7 +129,176 @@ def normalize(text: str) -> str:
 def normalize_mutation_authority_text(text: str) -> str:
     lowered = text.lower()
     without_hyphenation = re.sub(r"(?<=\w)-(?=\w)", " ", lowered)
-    return re.sub(r"\s+", " ", without_hyphenation)
+    return "\n".join(re.sub(r"[ \t\r\f\v]+", " ", line).strip() for line in without_hyphenation.splitlines())
+
+
+def sentence_like_segments(text: str) -> list[str]:
+    segments: list[str] = []
+    pending = ""
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            pending = ""
+            continue
+        if pending:
+            stripped = f"{pending} {stripped}"
+            pending = ""
+        if stripped.endswith(",") and not re.match(r"^\s*[-*+]\s+", line):
+            pending = stripped
+            continue
+        segments.extend(segment.strip() for segment in re.split(r"[.!?]+", stripped) if segment.strip())
+    if pending:
+        segments.append(pending.strip())
+    return segments
+
+
+def last_clause_start(segment: str, position: int) -> int:
+    starts = [segment.rfind(mark, 0, position) for mark in (";", ",")]
+    return max(starts) + 1
+
+
+def next_authority_start(segment: str, authority: re.Match[str]) -> int:
+    next_authority = MUTATION_AUTHORITY_RE.search(segment, authority.end())
+    return next_authority.start() if next_authority else len(segment)
+
+
+def clause_bounds(segment: str, start: int, end: int) -> tuple[int, int]:
+    clause_start = last_clause_start(segment, start)
+    clause_end = len(segment)
+    for mark in (";", ","):
+        position = segment.find(mark, end)
+        if position != -1:
+            clause_end = min(clause_end, position)
+    return clause_start, clause_end
+
+
+def has_review_actor_for_authority(segment: str, authority: re.Match[str], previous_review_clause: bool) -> bool:
+    clause_start = last_clause_start(segment, authority.start())
+    local_prefix = segment[clause_start : authority.start()]
+    sentence_has_review_context = bool(CODE_REVIEW_CONTEXT_RE.search(segment))
+
+    if OTHER_ACTOR_RE.search(local_prefix):
+        return False
+    if CODE_REVIEW_ACTOR_RE.search(local_prefix):
+        return True
+    if GENERIC_REVIEW_AGENT_RE.search(local_prefix) and sentence_has_review_context:
+        return True
+    if PRONOUN_ACTOR_RE.search(local_prefix) and previous_review_clause:
+        return True
+    if previous_review_clause and re.fullmatch(r"\s*(?:and|but|also|then)?\s*", local_prefix):
+        return True
+    if CODE_REVIEW_CONTEXT_RE.search(local_prefix) and GENERIC_REVIEW_AGENT_RE.search(segment[authority.start() : authority.end() + 25]):
+        return True
+    return False
+
+
+def passive_mutation_grant_is_review_authority(segment: str, grant: re.Match[str]) -> bool:
+    clause_start, clause_end = clause_bounds(segment, grant.start(), grant.end())
+    clause = segment[clause_start:clause_end]
+    grant_text = segment[grant.start() : grant.end()]
+
+    if REVIEW_PASSIVE_RECIPIENT_RE.search(clause):
+        return True
+    if OTHER_PASSIVE_RECIPIENT_RE.search(clause) or NEGATED_REVIEW_RECIPIENT_RE.search(clause):
+        return False
+    if CODE_REVIEW_ACTOR_RE.search(grant_text):
+        return True
+    return bool(CODE_REVIEW_CONTEXT_RE.search(segment))
+
+
+def mutation_candidate_is_mutating(segment: str, mutation: re.Match[str]) -> bool:
+    verb = mutation.group(1)
+    tail = segment[mutation.end() : mutation.end() + 60]
+
+    if verb in {"write", "writes", "writing"}:
+        return bool(
+            re.match(
+                r"\s+(?:a\s+|an\s+|the\s+)?(?:files?|code|fix(?:es)?|changes?|patch(?:es)?|diffs?)\b",
+                tail,
+            )
+        )
+    if verb in {"apply", "applies", "applying"}:
+        return bool(re.match(r"\s+(?:a\s+|an\s+|the\s+)?(?:fix(?:es)?|changes?|patch(?:es)?)\b", tail))
+    if verb in {"submit", "submits", "submitting"}:
+        return bool(re.match(r"\s+(?:review\s+)?(?:changes?|fix(?:es)?|patch(?:es)?)\b", tail))
+    return True
+
+
+def denied_mutation_pair(segment: str, authority: re.Match[str], mutation: re.Match[str]) -> bool:
+    before_authority = segment[max(0, authority.start() - 40) : authority.start()]
+    authority_to_mutation = segment[authority.start() : mutation.start()]
+    through_mutation = segment[authority.start() : mutation.end()]
+
+    if re.search(r"\bnot\s+(?:only|just)\b", authority_to_mutation):
+        return False
+    if re.search(r"\b(?:not|never|cannot|can\s+not|may\s+not|may\s+never)\b", authority_to_mutation):
+        return True
+    if re.search(r"\b(?:not|never|cannot|can\s+not|may\s+not|may\s+never)\b\s*$", before_authority):
+        return True
+    if re.search(r"\bnot\s+(?:allowed|permitted|authorized)\s+to\b", before_authority + through_mutation):
+        return True
+    if re.search(
+        r"\bonly\s+(?:inspect|read)\b.{0,80}\bnot\b.{0,30}" + MUTATION_ACTION_CANDIDATE_RE.pattern,
+        through_mutation,
+    ):
+        return True
+    return False
+
+
+def code_review_mutation_authority_evidence(text: str) -> list[str]:
+    evidence: list[str] = []
+    for segment in sentence_like_segments(normalize_mutation_authority_text(text)):
+        contexts = list(CODE_REVIEW_CONTEXT_RE.finditer(segment)) + list(CODE_REVIEW_ACTOR_RE.finditer(segment))
+        passive_grants = list(PASSIVE_MUTATION_GRANT_RE.finditer(segment))
+        if contexts:
+            blocked_passive_grants = [
+                grant for grant in passive_grants if passive_mutation_grant_is_review_authority(segment, grant)
+            ]
+            if blocked_passive_grants:
+                evidence.append(segment.strip())
+                continue
+
+        authorities = list(MUTATION_AUTHORITY_RE.finditer(segment))
+        mutations = [match for match in MUTATION_ACTION_CANDIDATE_RE.finditer(segment) if mutation_candidate_is_mutating(segment, match)]
+        previous_review_clause = False
+        for authority in authorities:
+            is_review_actor = has_review_actor_for_authority(segment, authority, previous_review_clause)
+            clause_end = min(
+                [pos for pos in (segment.find(";", authority.end()), next_authority_start(segment, authority)) if pos != -1]
+                or [len(segment)]
+            )
+            if is_review_actor:
+                previous_review_clause = True
+            if not contexts or not is_review_actor:
+                continue
+            for mutation in mutations:
+                if mutation.start() < authority.end():
+                    continue
+                if mutation.start() >= clause_end:
+                    continue
+                if mutation.start() - authority.end() > MUTATION_PAIR_MAX_CHARS:
+                    continue
+                if denied_mutation_pair(segment, authority, mutation):
+                    continue
+
+                pair_start = authority.start()
+                pair_end = mutation.end()
+                if not any(
+                    abs(context.start() - pair_end) <= MUTATION_CONTEXT_MAX_CHARS
+                    or abs(pair_start - context.end()) <= MUTATION_CONTEXT_MAX_CHARS
+                    or (context.start() <= pair_start and pair_end <= context.end())
+                    for context in contexts
+                ):
+                    continue
+
+                evidence_start = max(0, min(pair_start, *(context.start() for context in contexts)) - 40)
+                evidence_end = min(len(segment), max(pair_end, *(context.end() for context in contexts)) + 40)
+                evidence.append(segment[evidence_start:evidence_end].strip())
+                break
+            else:
+                continue
+            break
+    return evidence
 
 
 def heading_texts(text: str) -> list[str]:
@@ -185,10 +382,8 @@ def validate_text(text: str, *, allow_template_placeholders: bool = False) -> li
         if re.search(pattern, text, flags=re.IGNORECASE):
             failures.append(f"ungated public/account authority detected: {pattern}")
 
-    mutation_norm = normalize_mutation_authority_text(text)
-    for pattern in UNSAFE_CODE_REVIEW_MUTATION_PATTERNS:
-        if re.search(pattern, mutation_norm):
-            failures.append(f"unsafe code-review mutation authority detected: {pattern}")
+    for evidence in code_review_mutation_authority_evidence(text):
+        failures.append(f"unsafe code-review mutation authority detected: {evidence}")
 
     return failures
 
