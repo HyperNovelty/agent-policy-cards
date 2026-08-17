@@ -6,6 +6,12 @@ public/account/paid/destructive actions.
 
 ## Examples
 
+### `bounded_issue_triage_lane`
+
+- **Card:** `examples/AGENT_POLICY_CARD_BOUNDED_ISSUE_TRIAGE_LANE_2026-08-17.md`
+- **Demonstrates:** A single-issue report-only triage lane that inspects supplied public-safe issue context, separates source facts from interpretations, recommendations, decisions, and assignments, and reports severity rationale, uncertainty, missing evidence, duplicate/reproduction notes, and next safe action.
+- **Does not authorize:** GitHub/API integration, issue comments, labels, assignments, milestones, state changes, closure/reopen, pull requests, patches, commits, pushes, account actions, credential or private-data access, secret/key/token discovery, deployment, publishing, outreach, paid actions, or maintainer decision claims.
+
 ### `codex_local_productization_lane`
 
 - **Card:** `examples/AGENT_POLICY_CARD_CODEX_LOCAL_PRODUCTIZATION_LANE_2026-06-07.md`

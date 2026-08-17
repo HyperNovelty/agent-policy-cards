@@ -90,6 +90,28 @@
       ]
     },
     {
+      "lane_id": "bounded_issue_triage_lane",
+      "lane_label": "Bounded issue triage lane",
+      "lane_type": "single_issue_context_report_only_triage",
+      "policy_card_path": "examples/AGENT_POLICY_CARD_BOUNDED_ISSUE_TRIAGE_LANE_2026-08-17.md",
+      "required_before_next_change": true,
+      "last_reviewed": "2026-08-17",
+      "next_review_due": "2026-11-17",
+      "owner": "Hermes/Jordan review",
+      "expected_scope": "one supplied public-safe issue packet or explicitly assigned repository issue context, repo-local references when included, and local triage recommendation only",
+      "blocked_expansion_without_new_card": [
+        "live GitHub or API integration",
+        "issue comments, labels, assignments, milestones, state changes, closure, or reopen",
+        "pull request creation, review submission, patches, commits, branches, merges, pushes, tags, or releases",
+        "implementation repair or dependency changes",
+        "credential/private-data access or secret/key/token discovery",
+        "account actions, deploys, publishing, outreach, or paid actions",
+        "promoting recommendations into maintainer decisions, assignments, priority, schedule, acceptance, or resolution claims",
+        "runtime enforcement or permission grants",
+        "security-audit, compliance, SLA, or certification claims"
+      ]
+    },
+    {
       "lane_id": "future_source_to_system_promotion",
       "lane_label": "Source-to-system promotion lane",
       "lane_type": "source_packet_to_local_artifact",

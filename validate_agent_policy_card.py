@@ -97,6 +97,56 @@ OTHER_PASSIVE_RECIPIENT_RE = re.compile(
     r"\b(?:by|for|to)\s+(?:the\s+|a\s+|an\s+|separate\s+)?"
     r"(?:implementation|implementer|patch|editing)\s+agents?\b"
 )
+ISSUE_TRIAGE_CONTEXT_RE = re.compile(
+    r"\b(?:issue[-\s]?triage|triage\s+(?:agents?|lanes?|workers?|report|recommendation)|"
+    r"repository\s+issue|issue\s+packet)\b"
+)
+ISSUE_TRIAGE_ACTOR_RE = re.compile(
+    r"\b(?:issue[-\s]?triage\s+(?:agents?|lanes?|workers?)|triage\s+(?:agents?|lanes?|workers?))\b"
+)
+OTHER_ISSUE_TRIAGE_ACTOR_RE = re.compile(
+    r"\b(?:separate\s+)?(?:implementation|implementer|patch|editing)\s+agents?\b|"
+    r"\b(?:human\s+)?maintainers?\b|"
+    r"\bhuman\s+(?:reviewers?|operators?)\b"
+)
+ISSUE_TRIAGE_PASSIVE_OTHER_RECIPIENT_RE = re.compile(
+    r"\b(?:by|for|to)\s+(?:the\s+|a\s+|an\s+|separate\s+)?"
+    r"(?:(?:implementation|implementer|patch|editing)\s+agents?|"
+    r"(?:human\s+)?maintainers?|human\s+(?:reviewers?|operators?))\b"
+)
+GENERIC_AGENT_RE = re.compile(
+    r"\b(?:the\s+|an?\s+)?agents?\b"
+)
+ISSUE_TRIAGE_MUTATION_ACTION_RE = re.compile(
+    r"\b(?:(?:add|remove|apply|change|set)\s+labels?|comment|comments|commenting|"
+    r"label|labeling|assign|assigns|assigning|set\s+milestones?|milestoning|"
+    r"close|closes|closing|closed|reopen|reopens|"
+    r"reopening|state\s+change|state\s+changes|change\s+state|changes\s+state|"
+    r"open\s+(?:a\s+)?(?:pr|pull\s+request)|create\s+(?:a\s+)?(?:pr|pull\s+request)|"
+    r"patch|patches|patching|commit|commits|committing|push|pushes|pushing)\b"
+)
+ISSUE_TRIAGE_PASSIVE_MUTATION_GRANT_RE = re.compile(
+    r"\b(?:comments?|labels?|assignments?|milestones?|state\s+changes?|closure|reopening|"
+    r"pull\s+requests?|prs?|patches|commits?|pushes)\b.{0,50}\b(?:is|are)\s+"
+    r"(?:allowed|permitted|authorized)\b"
+)
+ISSUE_TRIAGE_PROMOTION_PATTERNS = [
+    r"\b(?:triage\s+)?recommendation\b.{0,80}\b(?:is|counts\s+as|becomes)\b.{0,40}\b"
+    r"(?:a\s+)?(?:maintainer\s+)?(?:decision|assignment|acceptance|priority|schedule)\b",
+    r"\b(?:triage\s+)?report\b.{0,80}\b(?:decides|assigns|accepts|prioritizes|schedules|closes)\b",
+    r"\b(?:issue[-\s]?triage|triage\s+(?:agent|lane|worker))\b.{0,100}\b"
+    r"(?:decides|assigns|accepts|prioritizes|schedules|closes)\b",
+]
+ISSUE_TRIAGE_PROMOTION_TARGET_RE = re.compile(
+    r"\b(?:decision|assignment|acceptance|priority|schedule|assigned|accepted|prioritized|closed|"
+    r"decides|assigns|accepts|prioritizes|schedules|closes)\b"
+)
+ISSUE_TRIAGE_SOURCE_FACT_PASSIVE_RE = re.compile(
+    r"\b(?:already\s+present|existing|pre[-\s]?existing|supplied|provided|recorded|current|"
+    r"historical|previously\s+(?:applied|recorded|set|assigned)|from\s+the\s+(?:supplied\s+)?"
+    r"(?:issue\s+)?packet|on\s+the\s+(?:supplied\s+)?(?:repository\s+)?issue)\b"
+    r".{0,80}\b(?:as|for)\s+(?:source\s+facts?|source\s+evidence|evidence|input\s+facts?)\b"
+)
 NEGATED_REVIEW_RECIPIENT_RE = re.compile(
     r"\bnot\s+(?:the\s+|a\s+|an\s+)?(?:code\s+review(?:er|ers| agents?)|review\s+agent)\b"
 )
@@ -301,6 +351,123 @@ def code_review_mutation_authority_evidence(text: str) -> list[str]:
     return evidence
 
 
+def denied_issue_triage_authority(segment: str, authority: re.Match[str], mutation: re.Match[str]) -> bool:
+    before_authority = segment[max(0, authority.start() - 45) : authority.start()]
+    authority_to_mutation = segment[authority.start() : mutation.start()]
+    through_mutation = segment[authority.start() : mutation.end()]
+
+    if re.search(r"\bnot\s+(?:only|just)\b", authority_to_mutation):
+        return False
+    if re.search(r"\b(?:not|never|cannot|can\s+not|may\s+not|may\s+never|must\s+not)\b", authority_to_mutation):
+        return True
+    if re.search(r"\b(?:not|never|cannot|can\s+not|may\s+not|may\s+never|must\s+not)\b\s*$", before_authority):
+        return True
+    if re.search(r"\bnot\s+(?:allowed|permitted|authorized)\s+to\b", before_authority + through_mutation):
+        return True
+    return False
+
+
+def has_issue_triage_actor_for_authority(segment: str, authority: re.Match[str], previous_triage_clause: bool) -> bool:
+    clause_start = last_clause_start(segment, authority.start())
+    local_prefix = segment[clause_start : authority.start()]
+    sentence_has_triage_context = bool(ISSUE_TRIAGE_CONTEXT_RE.search(segment))
+
+    if OTHER_ISSUE_TRIAGE_ACTOR_RE.search(local_prefix):
+        return False
+    if ISSUE_TRIAGE_ACTOR_RE.search(local_prefix):
+        return True
+    if GENERIC_AGENT_RE.search(local_prefix) and sentence_has_triage_context:
+        return True
+    if PRONOUN_ACTOR_RE.search(local_prefix) and previous_triage_clause:
+        return True
+    if previous_triage_clause and re.fullmatch(r"\s*(?:and|but|also|then)?\s*", local_prefix):
+        return True
+    return False
+
+
+def passive_mutation_grant_is_issue_triage_authority(segment: str, grant: re.Match[str]) -> bool:
+    clause_start, clause_end = clause_bounds(segment, grant.start(), grant.end())
+    clause = segment[clause_start:clause_end]
+    grant_text = segment[grant.start() : grant.end()]
+
+    if ISSUE_TRIAGE_SOURCE_FACT_PASSIVE_RE.search(clause):
+        return False
+    if ISSUE_TRIAGE_PASSIVE_OTHER_RECIPIENT_RE.search(clause):
+        return False
+    if ISSUE_TRIAGE_ACTOR_RE.search(clause) or ISSUE_TRIAGE_ACTOR_RE.search(grant_text):
+        return True
+    return bool(ISSUE_TRIAGE_CONTEXT_RE.search(segment))
+
+
+def issue_triage_mutation_authority_evidence(text: str) -> list[str]:
+    evidence: list[str] = []
+    for segment in sentence_like_segments(normalize_mutation_authority_text(text)):
+        contexts = list(ISSUE_TRIAGE_CONTEXT_RE.finditer(segment))
+        if not contexts:
+            continue
+
+        passive_grants = list(ISSUE_TRIAGE_PASSIVE_MUTATION_GRANT_RE.finditer(segment))
+        if any(passive_mutation_grant_is_issue_triage_authority(segment, grant) for grant in passive_grants):
+            evidence.append(segment.strip())
+            continue
+
+        authorities = list(MUTATION_AUTHORITY_RE.finditer(segment))
+        mutations = list(ISSUE_TRIAGE_MUTATION_ACTION_RE.finditer(segment))
+        previous_triage_clause = False
+        for authority in authorities:
+            is_triage_actor = has_issue_triage_actor_for_authority(segment, authority, previous_triage_clause)
+            if is_triage_actor:
+                previous_triage_clause = True
+            if is_triage_actor:
+                clause_end = min(
+                    [pos for pos in (segment.find(";", authority.end()), next_authority_start(segment, authority)) if pos != -1]
+                    or [len(segment)]
+                )
+                for mutation in mutations:
+                    if mutation.start() < authority.end() or mutation.start() >= clause_end:
+                        continue
+                    if mutation.start() - authority.end() > MUTATION_PAIR_MAX_CHARS:
+                        continue
+                    if denied_issue_triage_authority(segment, authority, mutation):
+                        continue
+                    evidence.append(segment.strip())
+                    break
+            if evidence and evidence[-1] == segment.strip():
+                break
+    return evidence
+
+
+def issue_triage_promotion_evidence(text: str) -> list[str]:
+    evidence: list[str] = []
+    for segment in sentence_like_segments(normalize_mutation_authority_text(text)):
+        if not ISSUE_TRIAGE_CONTEXT_RE.search(segment):
+            continue
+        for pattern in ISSUE_TRIAGE_PROMOTION_PATTERNS:
+            match = re.search(pattern, segment)
+            if match and not issue_triage_promotion_match_is_negated(segment, match):
+                evidence.append(segment.strip())
+                break
+    return evidence
+
+
+def issue_triage_promotion_match_is_negated(segment: str, match: re.Match[str]) -> bool:
+    targets = list(ISSUE_TRIAGE_PROMOTION_TARGET_RE.finditer(match.group(0)))
+    if not targets:
+        return False
+
+    target = targets[-1]
+    target_start = match.start() + target.start()
+    target_end = match.start() + target.end()
+    clause_start, _ = clause_bounds(segment, target_start, target_end)
+    same_clause_prefix = segment[clause_start:target_start]
+    return bool(
+        re.search(
+            r"\b(?:not|never|cannot|can\s+not|may\s+not|must\s+not|no)\b",
+            same_clause_prefix,
+        )
+    )
+
+
 def heading_texts(text: str) -> list[str]:
     out: list[str] = []
     for line in text.splitlines():
@@ -384,6 +551,12 @@ def validate_text(text: str, *, allow_template_placeholders: bool = False) -> li
 
     for evidence in code_review_mutation_authority_evidence(text):
         failures.append(f"unsafe code-review mutation authority detected: {evidence}")
+
+    for evidence in issue_triage_mutation_authority_evidence(text):
+        failures.append(f"unsafe issue-triage mutation authority detected: {evidence}")
+
+    for evidence in issue_triage_promotion_evidence(text):
+        failures.append(f"unsafe issue-triage recommendation promotion detected: {evidence}")
 
     return failures
 

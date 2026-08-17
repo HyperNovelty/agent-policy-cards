@@ -24,6 +24,7 @@ The examples directory shows several bounded workflow patterns you can inspect a
 
 - `CODEX_LOCAL_PRODUCTIZATION_LANE`: local productization/documentation lane with repo-only scope and review gates.
 - `DAILY_AI_TOOL_SCOUT`: recurring scouting workflow framed as research/report output, not autonomous action.
+- `BOUNDED_ISSUE_TRIAGE_LANE`: single-issue report-only triage lane that classifies supplied public-safe issue context and drafts local recommendations without GitHub mutation or maintainer-decision claims.
 - `IPUBLISHOS_DASHBOARD_EDITOR_PATCH`: bounded dashboard editing lane with explicit patch-review expectations.
 - `READ_ONLY_CODE_REVIEW_LANE`: single-repository read-only review lane for evidence-backed findings without repair, GitHub, account, or secret-discovery authority.
 - `SOURCE_TO_SYSTEM_PROMOTION_LANE`: promotion workflow that keeps source review and approval separate from execution authority.

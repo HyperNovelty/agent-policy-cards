@@ -6,7 +6,8 @@ This repository is intended to be useful to maintainers building bounded AI-agen
 
 - Keep validators standard-library only so policy cards can be checked in CI without paid services.
 - Expand negative fixtures for unsafe authority expansion, broad filesystem access, secret exposure, and unreviewed public/account actions.
-- Add small example policy cards for common maintainer lanes: issue triage, documentation repair, test generation, and bounded security-review preparation.
+- Add small example policy cards for common maintainer lanes: documentation repair, test generation, and bounded security-review preparation.
+- Harden report-only issue triage with more synthetic fixtures for duplicate detection, missing reproduction evidence, and category separation.
 - Keep generated reports advisory: no card should grant runtime authority by itself.
 
 ## Program fit
@@ -17,6 +18,6 @@ This repository is intended to be useful to maintainers building bounded AI-agen
 ## Good first issues
 
 - Add a negative fixture for accidental secret inclusion in policy-card examples.
-- Add a sample policy card for issue triage.
+- Add a synthetic issue-triage fixture that separates source facts, interpretation, recommendation, decision, and assignment fields.
 - Improve README examples with before/after unsafe vs safe policy snippets.
 - Add registry-level JSON aggregation for multi-command CI dashboards on top of the per-validator JSON export.

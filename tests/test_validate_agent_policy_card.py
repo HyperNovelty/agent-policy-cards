@@ -18,6 +18,8 @@ SECRET_SEARCH_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "secret_search_policy
 UNGATED_PUBLIC_ACCOUNT_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "ungated_public_account_policy_card.md"
 CODE_REVIEW_MUTATING_AUTHORITY_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "code_review_mutating_authority_policy_card.md"
 READ_ONLY_CODE_REVIEW_CARD = REPO_ROOT / "examples" / "AGENT_POLICY_CARD_READ_ONLY_CODE_REVIEW_LANE_2026-07-31.md"
+ISSUE_TRIAGE_UNSAFE_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "issue_triage_mutation_promotion_policy_card.md"
+BOUNDED_ISSUE_TRIAGE_CARD = REPO_ROOT / "examples" / "AGENT_POLICY_CARD_BOUNDED_ISSUE_TRIAGE_LANE_2026-08-17.md"
 
 
 class ValidateAgentPolicyCardTests(unittest.TestCase):
@@ -140,6 +142,75 @@ class ValidateAgentPolicyCardTests(unittest.TestCase):
 
     def test_read_only_code_review_card_passes(self) -> None:
         ok, failures = validator.validate_file(READ_ONLY_CODE_REVIEW_CARD)
+
+        self.assertTrue(ok, failures)
+
+    def test_issue_triage_mutation_promotion_fixture_fails_with_expected_findings(self) -> None:
+        ok, failures = validator.validate_file(ISSUE_TRIAGE_UNSAFE_FIXTURE)
+
+        self.assertFalse(ok)
+        self.assertTrue(
+            any("unsafe issue-triage mutation authority detected" in failure for failure in failures),
+            failures,
+        )
+        self.assertTrue(
+            any("unsafe issue-triage recommendation promotion detected" in failure for failure in failures),
+            failures,
+        )
+
+    def test_issue_triage_authority_affirmative_variants_fail(self) -> None:
+        cases = [
+            "The issue-triage agent may comment on the GitHub issue after review.",
+            "Issue-triage agents may patch repository issues after review.",
+            "For issue triage, the agent is permitted to label defects as bug.",
+            "The triage lane is authorized to assign repository issues to maintainers.",
+            "The triage workers are allowed to close duplicate issues.",
+            "During issue triage, state changes are allowed.",
+            "During issue triage, labels are allowed.",
+            "The issue-triage recommendation is a maintainer decision.",
+            "The triage recommendation is not a decision; it is an assignment.",
+            "The triage recommendation is not accepted; it becomes a priority.",
+            "The triage report decides the issue priority.",
+        ]
+
+        for text in cases:
+            with self.subTest(text=text):
+                failures = validator.validate_text(text, allow_template_placeholders=True)
+
+                self.assertTrue(
+                    any("unsafe issue-triage" in failure for failure in failures),
+                    failures,
+                )
+
+    def test_issue_triage_authority_denials_do_not_false_positive(self) -> None:
+        cases = [
+            "The issue-triage agent may not comment on issues.",
+            "For issue triage, the agent is not permitted to label defects.",
+            "The triage lane may draft a recommendation but must not assign issues.",
+            "Issue triage recommendations are not maintainer decisions.",
+            "The issue packet may include labels already present as source facts.",
+            "During issue triage, labels already present in the supplied packet are allowed as source facts.",
+            "During issue triage, assignments already recorded on the supplied repository issue are permitted as source evidence.",
+            "During issue triage, milestones from the issue packet are authorized as evidence.",
+            "Human approval is required before later GitHub comments, labels, assignments, or closure.",
+            "During issue triage, a separate implementation agent may patch the bug after explicit human approval.",
+            "During issue triage, separate implementation agents may patch bugs after explicit human approval.",
+            "The issue-triage agent may draft a recommendation; after approval, a human maintainer may comment on the issue.",
+            "The issue-triage agents may draft recommendations; after approval, human maintainers may label issues.",
+            "During issue triage, comments by human maintainers are permitted after explicit approval.",
+        ]
+
+        for text in cases:
+            with self.subTest(text=text):
+                failures = validator.validate_text(text, allow_template_placeholders=True)
+
+                self.assertFalse(
+                    any("unsafe issue-triage" in failure for failure in failures),
+                    failures,
+                )
+
+    def test_bounded_issue_triage_card_passes(self) -> None:
+        ok, failures = validator.validate_file(BOUNDED_ISSUE_TRIAGE_CARD)
 
         self.assertTrue(ok, failures)
 

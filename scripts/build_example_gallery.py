@@ -12,6 +12,22 @@ REGISTRY_PATH = PROJECT_ROOT / "policy_card_registry.json"
 GALLERY_PATH = PROJECT_ROOT / "docs" / "EXAMPLE_GALLERY.md"
 
 DETAILS = {
+    "bounded_issue_triage_lane": {
+        "demonstrates": (
+            "A single-issue report-only triage lane that inspects supplied "
+            "public-safe issue context, separates source facts from "
+            "interpretations, recommendations, decisions, and assignments, "
+            "and reports severity rationale, uncertainty, missing evidence, "
+            "duplicate/reproduction notes, and next safe action."
+        ),
+        "does_not_authorize": (
+            "GitHub/API integration, issue comments, labels, assignments, "
+            "milestones, state changes, closure/reopen, pull requests, "
+            "patches, commits, pushes, account actions, credential or "
+            "private-data access, secret/key/token discovery, deployment, "
+            "publishing, outreach, paid actions, or maintainer decision claims."
+        ),
+    },
     "codex_local_productization_lane": {
         "demonstrates": (
             "A bounded local coding/productization lane with assigned workspace "
