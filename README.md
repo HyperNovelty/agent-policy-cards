@@ -16,7 +16,9 @@ Use this repository to prototype narrow AI-agent lanes with explicit limits, loc
 
 The validator also includes negative fixtures for blocked cases such as cards
 that ask agents to search for secrets/API keys or grant public posting and
-account-setting authority without explicit approval gates.
+account-setting authority without explicit approval gates. It also includes
+targeted regression coverage for review or documentation-repair lanes that try
+to claim mutation authority beyond their stated scope.
 
 ## Examples
 
@@ -24,6 +26,7 @@ The examples directory shows several bounded workflow patterns you can inspect a
 
 - `CODEX_LOCAL_PRODUCTIZATION_LANE`: local productization/documentation lane with repo-only scope and review gates.
 - `DAILY_AI_TOOL_SCOUT`: recurring scouting workflow framed as research/report output, not autonomous action.
+- `BOUNDED_DOCS_REPAIR_LANE`: single-repository documentation repair lane for documentation-only local edits and a local repair report, without product-code, GitHub, account, deployment, publishing, or secret-discovery authority.
 - `IPUBLISHOS_DASHBOARD_EDITOR_PATCH`: bounded dashboard editing lane with explicit patch-review expectations.
 - `READ_ONLY_CODE_REVIEW_LANE`: single-repository read-only review lane for evidence-backed findings without repair, GitHub, account, or secret-discovery authority.
 - `SOURCE_TO_SYSTEM_PROMOTION_LANE`: promotion workflow that keeps source review and approval separate from execution authority.

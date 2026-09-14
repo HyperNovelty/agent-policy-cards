@@ -6,6 +6,12 @@ public/account/paid/destructive actions.
 
 ## Examples
 
+### `bounded_docs_repair_lane`
+
+- **Card:** `examples/AGENT_POLICY_CARD_BOUNDED_DOCS_REPAIR_LANE_2026-09-14.md`
+- **Demonstrates:** A single-repository documentation-repair lane with documentation-only local writes, scoped documentation generators/checks, git status/diff/log context, and a local repair report.
+- **Does not authorize:** Product source, test, schema, or script behavior changes; dependency or lockfile changes; CI/workflow changes outside Markdown comments; commits, branches, merges, pushes, PRs, issue comments, GitHub Pages, account actions, deploys, publishing, paid actions, secret discovery, or runtime permission grants.
+
 ### `codex_local_productization_lane`
 
 - **Card:** `examples/AGENT_POLICY_CARD_CODEX_LOCAL_PRODUCTIZATION_LANE_2026-06-07.md`

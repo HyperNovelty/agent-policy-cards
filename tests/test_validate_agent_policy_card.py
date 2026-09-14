@@ -17,7 +17,13 @@ SECRET_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "secret_like_policy_card.md"
 SECRET_SEARCH_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "secret_search_policy_card.md"
 UNGATED_PUBLIC_ACCOUNT_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "ungated_public_account_policy_card.md"
 CODE_REVIEW_MUTATING_AUTHORITY_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "code_review_mutating_authority_policy_card.md"
+DOCS_REPAIR_MUTATING_AUTHORITY_FIXTURE = (
+    REPO_ROOT / "tests" / "fixtures" / "docs_repair_mutating_authority_policy_card.md"
+)
 READ_ONLY_CODE_REVIEW_CARD = REPO_ROOT / "examples" / "AGENT_POLICY_CARD_READ_ONLY_CODE_REVIEW_LANE_2026-07-31.md"
+BOUNDED_DOCS_REPAIR_CARD = (
+    REPO_ROOT / "examples" / "AGENT_POLICY_CARD_BOUNDED_DOCS_REPAIR_LANE_2026-09-14.md"
+)
 
 
 class ValidateAgentPolicyCardTests(unittest.TestCase):
@@ -67,6 +73,15 @@ class ValidateAgentPolicyCardTests(unittest.TestCase):
         )
         self.assertIn(
             r"unsafe secret-search authority detected: \b(search|scan|grep|find|look for)\b.{0,80}\b(api keys?|secrets?|tokens?|credentials?)\b",
+            failures,
+        )
+
+    def test_docs_repair_mutating_authority_fixture_fails_with_expected_findings(self) -> None:
+        ok, failures = validator.validate_file(DOCS_REPAIR_MUTATING_AUTHORITY_FIXTURE)
+
+        self.assertFalse(ok)
+        self.assertTrue(
+            any("unsafe documentation-repair mutation authority detected" in failure for failure in failures),
             failures,
         )
 
@@ -138,8 +153,67 @@ class ValidateAgentPolicyCardTests(unittest.TestCase):
                     failures,
                 )
 
+    def test_docs_repair_mutating_authority_affirmative_variants_fail(self) -> None:
+        cases = [
+            "For documentation repair, the agent may commit the README update.",
+            "The docs-repair agent can push completed documentation fixes.",
+            "The documentation repair worker is permitted to publish GitHub Pages.",
+            "During docs repair, the agent is allowed to deploy the documentation site.",
+            "For documentation repair, the agent may merge the branch.",
+            "The docs-repair lane is authorized to open pull requests.",
+            "The docs-repair lane is authorized to submit pull requests.",
+            "For documentation repair, the agent may submit a PR.",
+            "The docs-repair agent can file pull requests.",
+            "The docs repair agent has permission to edit source code.",
+            "For documentation repair, the agent may patch product source files.",
+            "During documentation repair, the agent can update tests to match docs.",
+            "The documentation-repair agent may write code.",
+            "For docs repair, source code edits are allowed.",
+            "During documentation repair, commits are permitted.",
+        ]
+
+        for text in cases:
+            with self.subTest(text=text):
+                failures = validator.validate_text(text, allow_template_placeholders=True)
+
+                self.assertTrue(
+                    any("unsafe documentation-repair mutation authority detected" in failure for failure in failures),
+                    failures,
+                )
+
+    def test_docs_repair_mutating_authority_denials_and_allowed_docs_writes_do_not_false_positive(self) -> None:
+        cases = [
+            "The docs-repair agent may not commit changes.",
+            "The docs-repair agent may not submit pull requests.",
+            "For documentation repair, the agent cannot file a PR.",
+            "For documentation repair, the agent cannot push completed documentation fixes.",
+            "The documentation repair worker is not permitted to publish GitHub Pages.",
+            "During docs repair, the agent may write README.md and docs/ files.",
+            "The docs-repair agent may write a local docs report.",
+            "For documentation repair, the agent may edit documentation files only.",
+            "During documentation repair, the implementation agent may edit source code.",
+            "The docs-repair agent may describe source changes but cannot apply them.",
+            "For documentation repair, product source edits are permitted for the implementation agent.",
+            "The docs repair worker may inspect source code and update reviewer-facing Markdown.",
+            "For docs repair, the agent may write documentation files but may not commit them.",
+        ]
+
+        for text in cases:
+            with self.subTest(text=text):
+                failures = validator.validate_text(text, allow_template_placeholders=True)
+
+                self.assertFalse(
+                    any("unsafe documentation-repair mutation authority detected" in failure for failure in failures),
+                    failures,
+                )
+
     def test_read_only_code_review_card_passes(self) -> None:
         ok, failures = validator.validate_file(READ_ONLY_CODE_REVIEW_CARD)
+
+        self.assertTrue(ok, failures)
+
+    def test_bounded_docs_repair_card_passes(self) -> None:
+        ok, failures = validator.validate_file(BOUNDED_DOCS_REPAIR_CARD)
 
         self.assertTrue(ok, failures)
 

@@ -90,6 +90,29 @@
       ]
     },
     {
+      "lane_id": "bounded_docs_repair_lane",
+      "lane_label": "Bounded documentation repair lane",
+      "lane_type": "single_repository_documentation_only_repair",
+      "policy_card_path": "examples/AGENT_POLICY_CARD_BOUNDED_DOCS_REPAIR_LANE_2026-09-14.md",
+      "required_before_next_change": true,
+      "last_reviewed": "2026-09-14",
+      "next_review_due": "2026-12-14",
+      "owner": "Hermes/Jordan review",
+      "expected_scope": "documentation-only local edits and a local repair report inside one explicitly assigned repository or worktree, with scoped documentation generators/checks and git status/diff/log",
+      "blocked_expansion_without_new_card": [
+        "product source, test, schema, or script behavior changes",
+        "dependency or lockfile changes",
+        "CI/workflow changes outside Markdown comments",
+        "commits, branches, merges, pushes, tags, or releases",
+        "pull request submissions, review submissions, or issue comments",
+        "GitHub Pages, account actions, deploys, publishing, or paid actions",
+        "secret/key/token discovery",
+        ".env or credential-store reads",
+        "runtime enforcement or permission grants",
+        "security-audit, compliance, shipping, or certification claims"
+      ]
+    },
+    {
       "lane_id": "future_source_to_system_promotion",
       "lane_label": "Source-to-system promotion lane",
       "lane_type": "source_packet_to_local_artifact",

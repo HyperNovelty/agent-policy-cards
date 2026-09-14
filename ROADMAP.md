@@ -6,7 +6,8 @@ This repository is intended to be useful to maintainers building bounded AI-agen
 
 - Keep validators standard-library only so policy cards can be checked in CI without paid services.
 - Expand negative fixtures for unsafe authority expansion, broad filesystem access, secret exposure, and unreviewed public/account actions.
-- Add small example policy cards for common maintainer lanes: issue triage, documentation repair, test generation, and bounded security-review preparation.
+- Add small example policy cards for common maintainer lanes: issue triage, test generation, and bounded security-review preparation.
+- Keep the bounded documentation-repair example narrow: documentation-only local edits in one assigned repository/worktree, no product-code behavior changes, no GitHub mutation, no publication, and no secret handling.
 - Keep generated reports advisory: no card should grant runtime authority by itself.
 
 ## Program fit

@@ -121,6 +121,33 @@ PASSIVE_MUTATION_GRANT_RE = re.compile(
 MUTATION_PAIR_MAX_CHARS = 100
 MUTATION_CONTEXT_MAX_CHARS = 180
 
+DOCS_REPAIR_CONTEXT_RE = re.compile(
+    r"\b(?:documentation[- ]repair|docs[- ]repair|documentation\s+repair|docs\s+repair)\b"
+)
+DOCS_REPAIR_ACTOR_RE = re.compile(
+    r"\b(?:(?:documentation|docs)[- ]repair\s+(?:agent|agents|lane|worker|workers)|"
+    r"(?:documentation|docs)\s+repair\s+(?:agent|agents|lane|worker|workers))\b"
+)
+CODE_IMPLEMENTATION_ACTOR_RE = re.compile(
+    r"\b(?:implementation|implementer|code|coding|patch|editing)\s+agents?\b"
+)
+DOCS_REPAIR_FORBIDDEN_ACTION_RE = re.compile(
+    r"\b(commit|commits|committing|merge|merges|merging|push|pushes|pushing|"
+    r"publish|publishes|publishing|deploy|deploys|deploying|branch|branches|branching|"
+    r"tag|tags|tagging|release|releases|releasing|open|opens|opening|create|creates|creating|"
+    r"submit|submits|submitting|file|filing|"
+    r"edit|edits|editing|patch|patches|patching|modify|modifies|modifying|"
+    r"update|updates|updating|rewrite|rewrites|rewriting|write|writes|writing|"
+    r"apply|applies|applying)\b"
+)
+DOCS_REPAIR_PASSIVE_GRANT_RE = re.compile(
+    r"\b(?:commits?|merges?|push(?:es)?|publishing|publication|deploys?|deployment|"
+    r"branches?|tags?|releases?|pull\s+requests?|prs?|"
+    r"(?:product\s+)?(?:source|code|test|tests|schema|script)\s+"
+    r"(?:edits?|patch(?:es)?|changes?|updates?|writes?|rewrites?|modifications?))\b"
+    r".{0,50}\b(?:is|are)\s+(?:allowed|permitted|authorized)\b"
+)
+
 
 def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text.lower())
@@ -224,6 +251,76 @@ def mutation_candidate_is_mutating(segment: str, mutation: re.Match[str]) -> boo
     return True
 
 
+def docs_repair_action_is_forbidden(segment: str, action: re.Match[str]) -> bool:
+    verb = action.group(1)
+    tail = segment[action.end() : action.end() + 90]
+
+    if verb in {
+        "commit",
+        "commits",
+        "committing",
+        "merge",
+        "merges",
+        "merging",
+        "push",
+        "pushes",
+        "pushing",
+        "publish",
+        "publishes",
+        "publishing",
+        "deploy",
+        "deploys",
+        "deploying",
+        "branch",
+        "branches",
+        "branching",
+        "tag",
+        "tags",
+        "tagging",
+        "release",
+        "releases",
+        "releasing",
+    }:
+        return True
+    if verb in {
+        "open",
+        "opens",
+        "opening",
+        "create",
+        "creates",
+        "creating",
+        "submit",
+        "submits",
+        "submitting",
+        "file",
+        "filing",
+    }:
+        return bool(re.match(r"\s+(?:a\s+|an\s+|the\s+)?(?:pull\s+requests?|prs?)\b", tail))
+    if verb in {"apply", "applies", "applying"}:
+        return bool(
+            re.match(
+                r"\s+(?:a\s+|an\s+|the\s+)?(?:product\s+)?"
+                r"(?:source|code|test|tests|schema|script)\s+(?:fix(?:es)?|changes?|patch(?:es)?)\b",
+                tail,
+            )
+        )
+    if verb in {"write", "writes", "writing"}:
+        return bool(
+            re.match(
+                r"\s+(?:a\s+|an\s+|the\s+)?(?:product\s+)?"
+                r"(?:source|code|test|tests|schema|script)s?\b",
+                tail,
+            )
+        )
+    return bool(
+        re.match(
+            r"\s+(?:a\s+|an\s+|the\s+)?(?:product\s+)?"
+            r"(?:source|code|test|tests|schema|script)s?\b",
+            tail,
+        )
+    )
+
+
 def denied_mutation_pair(segment: str, authority: re.Match[str], mutation: re.Match[str]) -> bool:
     before_authority = segment[max(0, authority.start() - 40) : authority.start()]
     authority_to_mutation = segment[authority.start() : mutation.start()]
@@ -283,6 +380,100 @@ def code_review_mutation_authority_evidence(text: str) -> list[str]:
 
                 pair_start = authority.start()
                 pair_end = mutation.end()
+                if not any(
+                    abs(context.start() - pair_end) <= MUTATION_CONTEXT_MAX_CHARS
+                    or abs(pair_start - context.end()) <= MUTATION_CONTEXT_MAX_CHARS
+                    or (context.start() <= pair_start and pair_end <= context.end())
+                    for context in contexts
+                ):
+                    continue
+
+                evidence_start = max(0, min(pair_start, *(context.start() for context in contexts)) - 40)
+                evidence_end = min(len(segment), max(pair_end, *(context.end() for context in contexts)) + 40)
+                evidence.append(segment[evidence_start:evidence_end].strip())
+                break
+            else:
+                continue
+            break
+    return evidence
+
+
+def has_docs_repair_actor_for_authority(segment: str, authority: re.Match[str], previous_docs_clause: bool) -> bool:
+    clause_start = last_clause_start(segment, authority.start())
+    local_prefix = segment[clause_start : authority.start()]
+    sentence_has_docs_context = bool(DOCS_REPAIR_CONTEXT_RE.search(segment))
+
+    if CODE_IMPLEMENTATION_ACTOR_RE.search(local_prefix):
+        return False
+    if DOCS_REPAIR_ACTOR_RE.search(local_prefix):
+        return True
+    if GENERIC_REVIEW_AGENT_RE.search(local_prefix) and sentence_has_docs_context:
+        return True
+    if PRONOUN_ACTOR_RE.search(local_prefix) and previous_docs_clause:
+        return True
+    if previous_docs_clause and re.fullmatch(r"\s*(?:and|but|also|then)?\s*", local_prefix):
+        return True
+    if DOCS_REPAIR_CONTEXT_RE.search(local_prefix) and GENERIC_REVIEW_AGENT_RE.search(
+        segment[authority.start() : authority.end() + 25]
+    ):
+        return True
+    return False
+
+
+def passive_docs_repair_grant_is_authority(segment: str, grant: re.Match[str]) -> bool:
+    clause_start, clause_end = clause_bounds(segment, grant.start(), grant.end())
+    clause = segment[clause_start:clause_end]
+
+    if CODE_IMPLEMENTATION_ACTOR_RE.search(clause):
+        return False
+    return bool(DOCS_REPAIR_CONTEXT_RE.search(segment) or DOCS_REPAIR_ACTOR_RE.search(segment))
+
+
+def docs_repair_mutation_authority_evidence(text: str) -> list[str]:
+    evidence: list[str] = []
+    for segment in sentence_like_segments(normalize_mutation_authority_text(text)):
+        contexts = list(DOCS_REPAIR_CONTEXT_RE.finditer(segment)) + list(DOCS_REPAIR_ACTOR_RE.finditer(segment))
+        if not contexts:
+            continue
+
+        passive_grants = [
+            grant
+            for grant in DOCS_REPAIR_PASSIVE_GRANT_RE.finditer(segment)
+            if passive_docs_repair_grant_is_authority(segment, grant)
+        ]
+        if passive_grants:
+            evidence.append(segment.strip())
+            continue
+
+        authorities = list(MUTATION_AUTHORITY_RE.finditer(segment))
+        actions = [
+            match
+            for match in DOCS_REPAIR_FORBIDDEN_ACTION_RE.finditer(segment)
+            if docs_repair_action_is_forbidden(segment, match)
+        ]
+        previous_docs_clause = False
+        for authority in authorities:
+            is_docs_actor = has_docs_repair_actor_for_authority(segment, authority, previous_docs_clause)
+            clause_end = min(
+                [pos for pos in (segment.find(";", authority.end()), next_authority_start(segment, authority)) if pos != -1]
+                or [len(segment)]
+            )
+            if is_docs_actor:
+                previous_docs_clause = True
+            if not is_docs_actor:
+                continue
+            for action in actions:
+                if action.start() < authority.end():
+                    continue
+                if action.start() >= clause_end:
+                    continue
+                if action.start() - authority.end() > MUTATION_PAIR_MAX_CHARS:
+                    continue
+                if denied_mutation_pair(segment, authority, action):
+                    continue
+
+                pair_start = authority.start()
+                pair_end = action.end()
                 if not any(
                     abs(context.start() - pair_end) <= MUTATION_CONTEXT_MAX_CHARS
                     or abs(pair_start - context.end()) <= MUTATION_CONTEXT_MAX_CHARS
@@ -384,6 +575,9 @@ def validate_text(text: str, *, allow_template_placeholders: bool = False) -> li
 
     for evidence in code_review_mutation_authority_evidence(text):
         failures.append(f"unsafe code-review mutation authority detected: {evidence}")
+
+    for evidence in docs_repair_mutation_authority_evidence(text):
+        failures.append(f"unsafe documentation-repair mutation authority detected: {evidence}")
 
     return failures
 
