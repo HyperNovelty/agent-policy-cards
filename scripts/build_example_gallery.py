@@ -12,6 +12,20 @@ REGISTRY_PATH = PROJECT_ROOT / "policy_card_registry.json"
 GALLERY_PATH = PROJECT_ROOT / "docs" / "EXAMPLE_GALLERY.md"
 
 DETAILS = {
+    "bounded_docs_repair_lane": {
+        "demonstrates": (
+            "A single-repository documentation-repair lane with documentation-only "
+            "local writes, scoped documentation generators/checks, git status/diff/log "
+            "context, and a local repair report."
+        ),
+        "does_not_authorize": (
+            "Product source, test, schema, or script behavior changes; dependency "
+            "or lockfile changes; CI/workflow changes outside Markdown comments; "
+            "commits, branches, merges, pushes, PRs, issue comments, GitHub Pages, "
+            "account actions, deploys, publishing, paid actions, secret discovery, "
+            "or runtime permission grants."
+        ),
+    },
     "codex_local_productization_lane": {
         "demonstrates": (
             "A bounded local coding/productization lane with assigned workspace "
